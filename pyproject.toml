@@ -1,0 +1,13 @@
+[project]
+name = "genesis-mission-hackathon"
+version = "0.1.0"
+description = "Material for Genesis Mission Hackathon Oct 2026"
+readme = "README.md"
+requires-python = "==3.13.*"
+dependencies = [
+    "academy-py",
+    "globus-compute-sdk",
+    "langgraph",
+    "langchain-openai",
+    "academy-dashboard",
+]
