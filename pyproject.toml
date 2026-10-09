@@ -13,3 +13,9 @@ dependencies = [
     "globus-compute-endpoint>=4.18.0",
     "python-dotenv>=1.2.4",
 ]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.2",
+    "ruff>=0.16.10",
+]
