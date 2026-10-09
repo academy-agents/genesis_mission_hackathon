@@ -19,3 +19,7 @@ dev = [
     "pre-commit>=4.6.2",
     "ruff>=0.16.10",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Agents launched to remote sites must log with the root logger
+"intermediate/04_dashboard/*" = ["LOG015"]
