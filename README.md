@@ -35,6 +35,14 @@ uv sync
 
 `uv sync` downloads Python 3.13 if necessary, creates a `.venv` directory, and installs the dependencies from `uv.lock`.
 
+Copy the settings template, then fill in your endpoint IDs and `USER_AGENT_ID`:
+
+```bash
+cp settings.env.example settings.env
+```
+
+Git ignores `settings.env`, so your IDs stay local.
+
 Use `uv run` to run scripts in this environment:
 
 ```bash
