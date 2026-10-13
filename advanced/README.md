@@ -69,15 +69,10 @@ From the repository root:
 
 ```bash
 docker build -t gm-agent advanced/2_agent_tool_calling
-docker run --rm -it --name gm-agent \
-  -e ANTHROPIC_API_KEY \
-  -v "$PWD:/workspace" \
-  -v gm-agent-home:/root/.pi/agent \
-  -v gm-agent-globus:/root/.globus \
-  gm-agent pi
+docker run -it --name gm-agent gm-agent
 ```
 
-For the model options, the ALCF login, and how to connect to an HPC system, refer to the [Module 2 README](2_agent_tool_calling/README.md).
+In Pi, type `/login` to add your API key. For the other model options and how to connect to an HPC system, refer to the [Module 2 README](2_agent_tool_calling/README.md).
 
 ## 3. Scaling agents
 

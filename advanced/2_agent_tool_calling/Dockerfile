@@ -8,8 +8,12 @@ RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
-WORKDIR /workspace
-
 RUN pi install git:github.com/GusEllerm/pi-lab-profile
-RUN git clone https://github.com/GusEllerm/pi-lab-profile && cd pi-lab-profile
-RUN pi-lab-profile/scripts/install.sh lab
+RUN git clone --depth 1 https://github.com/GusEllerm/pi-lab-profile /tmp/pi-lab-profile \
+  && /tmp/pi-lab-profile/scripts/install.sh lab \
+  && rm -rf /tmp/pi-lab-profile
+
+RUN git clone --depth 1 https://github.com/academy-agents/genesis_mission_hackathon /workspace/genesis_mission_hackathon
+WORKDIR /workspace/genesis_mission_hackathon
+
+CMD ["pi"]

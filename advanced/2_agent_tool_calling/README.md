@@ -16,71 +16,37 @@ You do not write code. You give the agent a task, and the agent selects the tool
 | Globus Harness, `lab` profile | A status column, `/endpoints`, a spend gate for HPC, and the ALCF inference gateway models |
 | uv | Runs the hpc-bridge MCP server |
 | git, ripgrep, OpenSSH client | Tools for the agent and for hpc-bridge |
+| This repository | A copy in `/workspace/genesis_mission_hackathon`, where Pi starts |
 
-## Before you start
+## 1. Build and start
 
-- Install Docker. On macOS and Windows, use Docker Desktop.
-- Get access to an LLM. Refer to [step 2](#2-choose-a-model).
-
-## 1. Build the image
-
-From the repository root:
+Install Docker. On macOS and Windows, use Docker Desktop. Then, from the repository root:
 
 ```bash
 docker build -t gm-agent advanced/2_agent_tool_calling
+docker run -it --name gm-agent gm-agent
 ```
 
-To test the image:
+## 2. Log in to a model
 
-```bash
-docker run --rm gm-agent pi --version
-```
-
-## 2. Choose a model
-
-**Option A: An API key for a provider that Pi knows**, for example Anthropic or OpenAI. Put the key in your shell before you start the container:
-
-```bash
-export ANTHROPIC_API_KEY=<your key>
-```
-
-**Option B: The ALCF inference gateway.** If you have an ALCF account, you can use the gateway models (`alcf-minerva/…`, `alcf-metis/…`, `alcf-sophia/…`). The image has them already. Log in one time:
-
-```bash
-docker run --rm -it -v gm-agent-globus:/root/.globus gm-agent \
-  uvx --from "alcf-ai==0.10.0" alcf-ai auth login
-```
-
-The `gm-agent-globus` volume keeps the login. The login stays valid for approximately six months if you do not use it.
+In Pi, type `/login`. Select a provider, for example Anthropic, and paste your API key. Then type `/model` and select a model.
 
 > **Note:** The `globus/…` model in the profile needs the Globus Labs cluster. Select a different model.
 
-## 3. Start the agent
-
-From the repository root:
+To use the ALCF inference gateway, you need an ALCF account. In a second terminal, log in:
 
 ```bash
-docker run --rm -it --name gm-agent \
-  -e ANTHROPIC_API_KEY \
-  -v "$PWD:/workspace" \
-  -v gm-agent-home:/root/.pi/agent \
-  -v gm-agent-globus:/root/.globus \
-  gm-agent pi
+docker exec -it gm-agent uvx --from "alcf-ai==0.10.0" alcf-ai auth login
 ```
 
-- `-e ANTHROPIC_API_KEY` sends the key from your shell to the container. For a different provider, use the variable for that provider.
-- `-v "$PWD:/workspace"` lets the agent read and change the files in this repository.
-- The two named volumes keep your Pi settings, sessions, and logins between runs.
+Then type `/model` in Pi and select an `alcf-…` model.
 
-In Pi, type `/model` to select a model.
-
-## 4. Give the agent a task
+## 3. Give the agent a task
 
 Type these in Pi:
 
 | Input | Result |
 |---|---|
-| `!pwd` | Shows `/workspace`. `!` runs a shell command. |
 | `/mcp` | Shows the `hpc` server and its tools. |
 | `What HPC facilities can I use?` | The agent calls hpc-bridge and shows the facilities. |
 | `Connect to Aurora and show the hostname of the login node.` | The agent connects to Aurora and runs `hostname` on the login node. |
@@ -95,14 +61,18 @@ docker exec -it gm-agent <the ssh command from the agent>
 
 A compute block uses your allocation. The agent starts a compute block only after you confirm a dialog. When you are done, tell the agent to stop the endpoint. To see the facility, the block, and the node-hours, type `/hpc`.
 
-## Rebuild the image
+## Start again later
 
-The `gm-agent-home` volume keeps the configuration from your first run. After you rebuild the image, remove the volume to get the new configuration:
+When you exit Pi, the container stops. Your login and settings stay in the container. To start Pi again:
 
 ```bash
-docker volume rm gm-agent-home
+docker start -ai gm-agent
 ```
 
-This also removes your Pi sessions and your hpc-bridge logins.
+After you rebuild the image, remove the old container, then do `docker run` again:
+
+```bash
+docker rm gm-agent
+```
 
 **Challenge:** Tell the agent to do the [intermediate Module 1](../../intermediate/01_claude_code/README.md) task: calculate QED with RDKit on Aurora for aspirin and five similar molecules. Compare the result with the Claude Code result.
