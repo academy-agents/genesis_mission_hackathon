@@ -18,7 +18,13 @@ async def main() -> int:
 
     # 1. Update this to match your preferred HPC system
     dotenv.load_dotenv(dotenv.find_dotenv("settings.env", usecwd=True))
-    executor = GlobusExecutor(endpoint_id=os.environ["AURORA_ENDPOINT_ID"])
+    executor = GlobusExecutor(
+        endpoint_id=os.environ["AURORA_ENDPOINT_ID"],
+        # Run the workers in the repo venv from `uv sync`, which has the agent code
+        user_endpoint_config={
+            "worker_init": "source $HOME/genesis_mission_hackathon/.venv/bin/activate"
+        },
+    )
 
     async with await Manager.from_exchange_factory(
         factory=HttpExchangeFactory(),
