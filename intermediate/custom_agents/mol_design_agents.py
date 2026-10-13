@@ -8,6 +8,7 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+import httpx
 from academy.agent import Agent, action, loop
 from langchain.messages import HumanMessage, SystemMessage
 from langchain.tools import tool
@@ -65,7 +66,12 @@ class MolDesignAgent(Agent):
         self.pool = ProcessPoolExecutor(max_workers=n_workers)
 
         tools = [tool(self.compute_qed)]
+        # Give each agent its own HTTP client. The default client is shared by the
+        # whole process, so a second agent on the same worker would reuse
+        # connections from a closed event loop ("Event loop is closed").
+        self.http_client = httpx.AsyncClient()
         llm = ChatOpenAI(
+            http_async_client=self.http_client,
             model=self.llm_model,
             base_url=self.base_url,
             api_key=self.api_key,
@@ -79,6 +85,7 @@ class MolDesignAgent(Agent):
 
     async def agent_on_shutdown(self) -> None:
         self.pool.shutdown()
+        await self.http_client.aclose()
 
     async def compute_qed(self, smiles: str) -> float:
         """Compute the QED (drug-likeness) score for the given molecule.
