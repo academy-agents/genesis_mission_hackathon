@@ -31,13 +31,21 @@ Follow the `hpc-bridge:driving-hpc` guidance for the tools. This skill adds what
 
 ## 1. Before you connect (user)
 
-hpc-bridge reads the SSH user name only from `~/.ssh/config`. On a computer without an entry for the system, every SSH goes out as the local user name and fails. So first ask the user for their user name on the system. Then give them this one command to run (do not edit the file yourself). `~/.ssh` may not exist yet, so keep the `mkdir`:
+hpc-bridge reads the SSH user name only from `~/.ssh/config`. On a computer without an entry for the system, every SSH goes out as the local user name and fails.
+
+Before the first `connect_facility` for Aurora or Perlmutter, find out if the user name is known. Do not print the whole file; it can hold other secrets:
 
 ```bash
-mkdir -p ~/.ssh && chmod 700 ~/.ssh && printf 'Host aurora.alcf.anl.gov\n  User <their-user-name>\n' >> ~/.ssh/config && chmod 600 ~/.ssh/config
+ssh -G <ssh_host> 2>/dev/null | grep '^user '
 ```
 
-Check the result with `cat -A ~/.ssh/config`: `User` and the name must be on one line.
+If the result is the local user name (`whoami`), the user name is not known. First look for a short alias for the system, such as `Host aurora` or `Host perlmutter` (`ssh -G aurora 2>/dev/null | grep -E '^(user|hostname) '`). If the alias has a login node of that system as `hostname` (for example `perlmutter-p1.nersc.gov`) and a user name, use the alias as `ssh_host` and do not ask. But if `~/.hpc-bridge/endpoints.json` already has a key that starts with the full `ssh_host` from the table, keep the full name: hpc-bridge finds an endpoint by the `ssh_host` it was made with, so a different name makes a second endpoint. Then ask the user for their user name on that system (for example with `AskUserQuestion`). Do not guess it from the local user name or the email address. Give them this one command to run, with the `ssh_host` from the table (do not edit the file yourself). `~/.ssh` may not exist yet, so keep the `mkdir`:
+
+```bash
+mkdir -p ~/.ssh && chmod 700 ~/.ssh && printf 'Host <ssh_host>\n  User <their-user-name>\n' >> ~/.ssh/config && chmod 600 ~/.ssh/config
+```
+
+Check the result again with `ssh -G <ssh_host> | grep '^user '`: it must show their user name.
 
 If `connect_facility` fails with `UNKNOWN HOST KEY`, the user runs `ssh aurora.alcf.anl.gov` once, accepts the fingerprint, logs in, and exits. Then call `connect_facility` again.
 
