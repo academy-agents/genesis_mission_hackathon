@@ -121,10 +121,30 @@ def route_after_confirm(state: MoleculeState) -> str:
 
 
 def run_on_aurora(state: MoleculeState) -> dict:
-    with Executor(endpoint_id=os.environ["AURORA_ENDPOINT_ID"]) as ex:
+    # Run on an Aurora compute node, in a batch job charged to the account
+    # config = {
+    #    "account": os.environ["AURORA_ACCOUNT"],
+    #    # hpc-bridge reads the PBS queue from "partition"
+    #    "partition": os.environ["AURORA_QUEUE"],
+    #    # Aurora holds jobs that do not name the file systems they use
+    #    "scheduler_options": "#PBS -l filesystems=home:flare",
+    # }
+    # To run on Perlmutter instead, use PERLMUTTER_ENDPOINT_ID below and this config
+    config = {
+        "account": os.environ["PERLMUTTER_ACCOUNT"],
+        "partition": "debug",
+        # Perlmutter rejects jobs that do not select CPU or GPU nodes
+        "scheduler_options": f"#SBATCH --constraint=cpu\n#SBATCH --reservation={os.environ['PERLMUTTER_RESERVATION']}",
+    }
+    # To run on this computer instead, replace the with block below with
+    # from concurrent.futures import ProcessPoolExecutor
+    with Executor(
+        endpoint_id=os.environ["AURORA_ENDPOINT_ID"], user_endpoint_config=config
+    ) as ex:
         # Send compute_qed as code, so Aurora does not need this module to be importable.
         ex.serializer = ComputeSerializer(strategy_code=AllCodeStrategies())
-        rows = ex.submit(compute_qed, state.molecules).result(timeout=300)
+        # The batch job can wait in the queue for several minutes
+        rows = ex.submit(compute_qed, state.molecules).result(timeout=1200)
     return {"results": sorted(rows, key=lambda r: r["qed"], reverse=True)}
 
 

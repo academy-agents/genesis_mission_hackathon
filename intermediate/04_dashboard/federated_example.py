@@ -23,7 +23,15 @@ from globus_compute_sdk import Executor as GlobusExecutor
 async def main(user_agent_id: UUID) -> None:
     """Launch MonitoredAgents across facilities with Globus Compute."""
     executors = {
-        "nersc": GlobusExecutor(endpoint_id=os.environ["PERLMUTTER_ENDPOINT_ID"]),
+        "nersc": GlobusExecutor(
+            endpoint_id=os.environ["PERLMUTTER_ENDPOINT_ID"],
+            user_endpoint_config={
+                "account": os.environ["PERLMUTTER_ACCOUNT"],
+                "partition": "debug",
+                # Perlmutter rejects jobs that do not select CPU or GPU nodes
+                "scheduler_options": f"#SBATCH --constraint=cpu\n#SBATCH --reservation={os.environ['PERLMUTTER_RESERVATION']}",
+            },
+        ),
         #'anvil': GlobusExecutor(
         #     endpoint_id='5aafb4c1-27b2-40d8-a038-a0277611868f',
         #     user_endpoint_config={'worker_init': 'source ~/setup_env.sh'}),
