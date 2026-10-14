@@ -70,7 +70,8 @@ async def main() -> int:
 
         print("Starting discovery campaign")
         print("=" * 80)
-        while True:
+        # Limit to 10 rounds
+        for i in range(10):
             await asyncio.sleep(30)
             for i, agent in enumerate(agents):
                 print(f"Progress report from agent {i}")
