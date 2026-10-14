@@ -30,6 +30,20 @@ Start Claude Code in the repository root. Then give this prompt:
 Convert the Module 1 similar-molecules task into a LangGraph agent in intermediate/02_langgraph/similar_molecules.py: an LLM on the MAG proposes the molecules, I approve y/n, Globus Compute calculates QED on Aurora, and the LLM explains the ranking.
 ```
 
+> **A finished `similar_molecules.py` already ships in this directory.** It is the
+> author's reference version, not something your agent produced. The prompt above asks
+> your agent to write that same file, so following it literally overwrites the
+> reference. Pick one before you start:
+>
+> - **Run the reference** to see the module work, and skip the prompt.
+> - **Write your own** to a different name, for example `similar_molecules_mine.py`,
+>   and keep the reference to compare against.
+> - **Overwrite it** as the prompt says. `git checkout intermediate/02_langgraph/similar_molecules.py`
+>   restores the reference afterwards.
+>
+> `similar_molecules_local.py` is the same graph with the QED step on your own computer,
+> useful if your endpoint is not ready.
+
 The `langgraph-mag-agent` skill gives Claude Code the MAG settings, the approval step, and the Globus Compute rules.
 
 The agent makes this graph:

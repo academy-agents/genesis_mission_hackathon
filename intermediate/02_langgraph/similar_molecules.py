@@ -122,20 +122,20 @@ def route_after_confirm(state: MoleculeState) -> str:
 
 def run_on_aurora(state: MoleculeState) -> dict:
     # Run on an Aurora compute node, in a batch job charged to the account
-    # config = {
-    #    "account": os.environ["AURORA_ACCOUNT"],
-    #    # hpc-bridge reads the PBS queue from "partition"
-    #    "partition": os.environ["AURORA_QUEUE"],
-    #    # Aurora holds jobs that do not name the file systems they use
-    #    "scheduler_options": "#PBS -l filesystems=home:flare",
-    # }
-    # To run on Perlmutter instead, use PERLMUTTER_ENDPOINT_ID below and this config
     config = {
-        "account": os.environ["PERLMUTTER_ACCOUNT"],
-        "partition": "debug",
-        # Perlmutter rejects jobs that do not select CPU or GPU nodes
-        "scheduler_options": f"#SBATCH --constraint=cpu\n#SBATCH --reservation={os.environ['PERLMUTTER_RESERVATION']}",
+        "account": os.environ["AURORA_ACCOUNT"],
+        # hpc-bridge reads the PBS queue from "partition"
+        "partition": os.environ["AURORA_QUEUE"],
+        # Aurora holds jobs that do not name the file systems they use
+        "scheduler_options": "#PBS -l filesystems=home:flare",
     }
+    # To run on Perlmutter instead, use PERLMUTTER_ENDPOINT_ID below and this config
+    # config = {
+    #    "account": os.environ["PERLMUTTER_ACCOUNT"],
+    #    "partition": "debug",
+    #    # Perlmutter rejects jobs that do not select CPU or GPU nodes
+    #    "scheduler_options": f"#SBATCH --constraint=cpu\n#SBATCH --reservation={os.environ['PERLMUTTER_RESERVATION']}",
+    # }
     # To run on this computer instead, replace the with block below with
     # from concurrent.futures import ProcessPoolExecutor
     with Executor(
