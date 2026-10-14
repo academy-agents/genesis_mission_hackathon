@@ -9,7 +9,7 @@ dependencies = [
     "globus-compute-sdk",
     "langgraph",
     "langchain-openai",
-    "academy-dashboard",
+    "academy-dashboard==1.0.0",
     "globus-compute-endpoint>=4.18.0",
     "python-dotenv>=1.2.4",
     "langchain>=1.4.4",
