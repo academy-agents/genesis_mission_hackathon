@@ -33,7 +33,8 @@ async def main() -> int:
         # TODO: Update the following to match your preferred endpoint
         user_endpoint_config={
             "account": os.environ["AURORA_ACCOUNT"],
-            "queue": "debug",
+            # hpc-bridge reads the PBS queue from "partition"
+            "partition": os.environ["AURORA_QUEUE"],
             "scheduler_options": "#PBS -l filesystems=home:flare",
         },
     )
