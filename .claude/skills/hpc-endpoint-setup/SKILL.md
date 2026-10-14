@@ -9,7 +9,7 @@ The goal is the state that Module 1 to 4 need:
 
 - `~/genesis_mission_hackathon` on the system, installed with `uv sync`.
 - The endpoint that hpc-bridge makes, `hpc-bridge-<facility>`, online. **By default, tasks run on compute nodes**: the endpoint submits a PBS job (Aurora) or a Slurm job (Perlmutter) for them, and the workers run in the repo `.venv`.
-- Its UUID in `settings.env` on this computer, and `remote_compute_node_call.py` returning `Hello World from <compute node>`.
+- Its UUID in `settings.env` on this computer, and `remote_function_call.py` returning `Hello World from <compute node>`.
 
 A login-node endpoint (`gm_endpoint`) is the fallback. Use it only if the user asks for the login node, or has no allocation (section 7).
 
@@ -17,8 +17,8 @@ Follow the `hpc-bridge:driving-hpc` guidance for the tools. This skill adds what
 
 | System | `facility` | `ssh_host` | `settings.env` variables | Notes |
 |---|---|---|---|---|
-| Aurora | `aurora` | `aurora.alcf.anl.gov` | `AURORA_ENDPOINT_ID`, `AURORA_COMPUTE_ENDPOINT_ID`, `AURORA_ACCOUNT` | Compute nodes tested (`x4…`). MobilePASS+ MFA. |
-| Perlmutter | `perlmutter` | `perlmutter.nersc.gov` | `PERLMUTTER_ENDPOINT_ID`, `PERLMUTTER_COMPUTE_ENDPOINT_ID`, `PERLMUTTER_ACCOUNT`, `PERLMUTTER_RESERVATION` | Compute nodes tested (`nid…`). |
+| Aurora | `aurora` | `aurora.alcf.anl.gov` | `AURORA_ENDPOINT_ID`, `AURORA_ACCOUNT`, `AURORA_QUEUE` | Compute nodes tested (`x4…`). MobilePASS+ MFA. |
+| Perlmutter | `perlmutter` | `perlmutter.nersc.gov` | `PERLMUTTER_ENDPOINT_ID`, `PERLMUTTER_ACCOUNT`, `PERLMUTTER_RESERVATION` | Compute nodes tested (`nid…`). |
 | Frontier | `frontier` | `frontier.olcf.ornl.gov` | `FRONTIER_ENDPOINT_ID` | Not tested yet. |
 
 ## Rules
@@ -112,16 +112,15 @@ The `grep` must show the `genesis_mission_hackathon/.venv` default and `default(
 
 ## 5. Update `settings.env` and test (local)
 
-Set both endpoint variables for the system to the hpc-bridge UUID. Comment out an older value instead of deleting it. Do not print the file:
+Set the endpoint variable for the system to the hpc-bridge UUID. Comment out an older value instead of deleting it. Do not print the file:
 
 ```bash
-sed -i.bak -e 's/^AURORA_ENDPOINT_ID=\(.*\)/# AURORA_ENDPOINT_ID=\1\nAURORA_ENDPOINT_ID=<uuid>/' \
-  -e 's/^AURORA_COMPUTE_ENDPOINT_ID=.*/AURORA_COMPUTE_ENDPOINT_ID=<uuid>/' settings.env && rm settings.env.bak
+sed -i.bak -e 's/^AURORA_ENDPOINT_ID=\(.*\)/# AURORA_ENDPOINT_ID=\1\nAURORA_ENDPOINT_ID=<uuid>/' settings.env && rm settings.env.bak
 ```
 
-Check that `<SYSTEM>_ACCOUNT` is set without printing it (`os.environ.get(...)` is truthy).
+Check that `AURORA_ACCOUNT` and `AURORA_QUEUE`, or `PERLMUTTER_ACCOUNT` and `PERLMUTTER_RESERVATION`, are set without printing them (`os.environ.get(...)` is truthy).
 
-**Compute-node config (the default).** `intermediate/00_endpoint_setup/remote_compute_node_call.py` has the tested values; reuse them:
+**Compute-node config (the default).** `intermediate/00_endpoint_setup/remote_function_call.py` has the tested values; reuse them:
 
 | Key | Aurora | Perlmutter |
 |---|---|---|
@@ -135,7 +134,7 @@ Check that `<SYSTEM>_ACCOUNT` is set without printing it (`os.environ.get(...)` 
 
 Aurora compute nodes reach the internet (Globus, the Academy exchange, the MAG) only through the ALCF proxy. Do not quote strings yourself; the endpoint quotes them.
 
-After the user's OK, run from the repository root: `uv run python intermediate/00_endpoint_setup/remote_compute_node_call.py`. Run it in the background: the job waits in the queue first (Aurora took about 10 min). It must print `Hello World from x4…` (Aurora) or `nid…` (Perlmutter). While it waits, watch the job with `run_shell("qstat -u $USER", shape="login")` or `squeue -u $USER`.
+After the user's OK, run from the repository root: `uv run python intermediate/00_endpoint_setup/remote_function_call.py`. Run it in the background: the job waits in the queue first (Aurora took about 10 min). It must print `Hello World from x4…` (Aurora) or `nid…` (Perlmutter). While it waits, watch the job with `run_shell("qstat -u $USER", shape="login")` or `squeue -u $USER`.
 
 **Login-node config (only for quick checks, no allocation).** Send all three keys; `compute: False` alone still renders a PBS/Slurm provider and fails:
 

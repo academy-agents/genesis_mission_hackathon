@@ -79,14 +79,14 @@ The script runs `hello_world` on each endpoint in `settings.env` and shows the r
 
 The endpoint that hpc-bridge makes (`hpc-bridge-<site>`) can run a task on the login node or on a compute node. If the task sends `"compute": True` in `user_endpoint_config`, the endpoint submits a batch job: a PBS job on Aurora, or a Slurm job on Perlmutter.
 
-1. In `settings.env`, set `AURORA_COMPUTE_ENDPOINT_ID` and `PERLMUTTER_COMPUTE_ENDPOINT_ID` to the hpc-bridge endpoint IDs. Set `AURORA_ACCOUNT` and `PERLMUTTER_ACCOUNT` to your allocations.
+1. In `settings.env`, set `AURORA_ENDPOINT_ID` and `PERLMUTTER_ENDPOINT_ID` to the hpc-bridge endpoint IDs. Set `AURORA_ACCOUNT`, `AURORA_QUEUE`, `PERLMUTTER_ACCOUNT`, and `PERLMUTTER_RESERVATION`.
 2. Run the test:
 
    ```bash
-   uv run python intermediate/00_endpoint_setup/remote_compute_node_call.py
+   uv run python intermediate/00_endpoint_setup/remote_function_call.py
    ```
 
-The script submits one 10 minute `debug` job on each system. It waits for the job to start, then shows the host name of the compute node. The job uses your allocation.
+The script submits one batch job on each system: on Aurora to the queue in `AURORA_QUEUE`, on Perlmutter to the reservation in `PERLMUTTER_RESERVATION`. It waits for the job to start, then shows the host name of the compute node. The job uses your allocation.
 
 # HPC-Bridge
 

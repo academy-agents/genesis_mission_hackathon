@@ -40,3 +40,11 @@ uv run python intermediate/02_langgraph/similar_molecules.py
 ```
 
 The agent shows the molecules and asks `[y/N]` before it sends work to Aurora.
+
+## Run without Aurora
+
+`similar_molecules_local.py` is the same agent, but it calculates QED on your computer. You do not need an endpoint. The LLM is still on the MAG.
+
+```bash
+uv run python intermediate/02_langgraph/similar_molecules_local.py
+```
