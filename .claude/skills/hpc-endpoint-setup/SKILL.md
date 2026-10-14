@@ -1,6 +1,6 @@
 ---
 name: hpc-endpoint-setup
-description: Use when the user asks to connect to Aurora, Perlmutter, or Frontier with hpc-bridge, install genesis_mission_hackathon on that system, or start, check, or stop the hackathon's Globus Compute endpoint (gm_endpoint) there. Covers Module 0 of this repo.
+description: Use when the user asks to connect to Aurora, Perlmutter, or Frontier with hpc-bridge, install genesis_mission_hackathon on that system, or set up the Globus Compute endpoint that runs the hackathon tasks on compute nodes there, or start, check, or stop it. Covers Module 0 of this repo.
 ---
 
 # Set up the hackathon endpoint on an HPC system with hpc-bridge
@@ -8,20 +8,23 @@ description: Use when the user asks to connect to Aurora, Perlmutter, or Frontie
 The goal is the state that Module 1 to 4 need:
 
 - `~/genesis_mission_hackathon` on the system, installed with `uv sync`.
-- An endpoint named `gm_endpoint`, configured from that repo's `.venv`, running on the **login node**.
-- Its UUID in `settings.env` on this computer, and `remote_function_call.py` returning `Hello World from <login node>`.
+- The endpoint that hpc-bridge makes, `hpc-bridge-<facility>`, online. **By default, tasks run on compute nodes**: the endpoint submits a PBS job (Aurora) or a Slurm job (Perlmutter) for them, and the workers run in the repo `.venv`.
+- Its UUID in `settings.env` on this computer, and `remote_compute_node_call.py` returning `Hello World from <compute node>`.
+
+A login-node endpoint (`gm_endpoint`) is the fallback. Use it only if the user asks for the login node, or has no allocation (section 7).
 
 Follow the `hpc-bridge:driving-hpc` guidance for the tools. This skill adds what that guidance does not know about this repo and these systems.
 
-| System | `facility` | `ssh_host` | `settings.env` variable | Notes |
+| System | `facility` | `ssh_host` | `settings.env` variables | Notes |
 |---|---|---|---|---|
-| Aurora | `aurora` | `aurora.alcf.anl.gov` | `AURORA_ENDPOINT_ID` | Tested. MobilePASS+ MFA. |
-| Perlmutter | `perlmutter` | `perlmutter.nersc.gov` | `PERLMUTTER_ENDPOINT_ID` | Not tested yet. |
+| Aurora | `aurora` | `aurora.alcf.anl.gov` | `AURORA_ENDPOINT_ID`, `AURORA_COMPUTE_ENDPOINT_ID`, `AURORA_ACCOUNT` | Compute nodes tested (`x4…`). MobilePASS+ MFA. |
+| Perlmutter | `perlmutter` | `perlmutter.nersc.gov` | `PERLMUTTER_ENDPOINT_ID`, `PERLMUTTER_COMPUTE_ENDPOINT_ID`, `PERLMUTTER_ACCOUNT` | Compute nodes tested (`nid…`). |
 | Frontier | `frontier` | `frontier.olcf.ornl.gov` | `FRONTIER_ENDPOINT_ID` | Not tested yet. |
 
 ## Rules
 
-- Run every remote command with `run_shell(shape="login")`. Do not call `ensure_endpoint_up` and do not start a `compute` shape. This setup uses no allocation.
+- Run every setup command with `run_shell(shape="login")`. Do not call `ensure_endpoint_up`: the compute nodes come from `user_endpoint_config` in the task (section 5), not from hpc-bridge's own compute block.
+- Compute-node tasks use the user's allocation. Read the account from `settings.env` (`<SYSTEM>_ACCOUNT`); if it is empty, ask the user for it. Before the first compute-node submit, tell the user that it submits one 10 min `debug` job on their account, and get their OK.
 - The user does the steps labelled **(user)** in their own terminal. Give them the exact command.
 - Never ask for, type, or show a password or a PIN. Do not show the contents of `settings.env`.
 - The plugin's credential guard blocks any command that contains `password=`, `token=`, `secret=`, or `api_key=` (also with `:`). Do not write such strings, not even in a `grep`.
@@ -52,7 +55,7 @@ connect_facility(facility="aurora", ssh_host="aurora.alcf.anl.gov")
 | `needs_preauth` | **On ALCF, skip `complete_preauth`** even if `preauth_code_ok` is `true`: Aurora labels its passcode prompt `Password:`, so `complete_preauth` refuses it and the passcode is wasted. **(user)** Give the user the `preauth_command` exactly as returned (no `user@`; the config supplies it). They run it in their own terminal window, not with `!`, and type the MobilePASS+ passcode at `Password:`. When they say it is done, call `connect_facility` again. |
 | `proposed_facility_details` | Show the proposal and confirm it with the user. For Aurora, `interface` must be `hsn0`, `scheduler` `pbs`, `partition` `debug`. Set `scheduler_options` to `#PBS -l filesystems=home:flare`; Aurora rejects jobs without it. Then call `connect_facility(..., details=<confirmed>)`. |
 | `provisioning` | Call again after a short wait. "allocating nodes" here means the free login-node worker; no job is queued. |
-| `needs_account` | **Ready.** Do not look for an allocation; this setup does not need one. Continue with step 3. |
+| `needs_account` | **Ready.** Do not look for an allocation with hpc-bridge; the account goes in `user_endpoint_config` (section 5). Continue with step 3. |
 
 ## 3. Install the repo
 
@@ -73,36 +76,80 @@ uv run globus-compute-endpoint version
 
 If `git pull --ff-only` fails, the user has local changes on the system. Stop and tell them.
 
-## 4. Configure and start `gm_endpoint`
+## 4. Find the compute endpoint
 
-Use the same prefix as step 3 on every command.
+hpc-bridge already made the endpoint in step 2. Its name is `hpc-bridge-<facility>` (for example `hpc-bridge-aurora`). Get its UUID from `~/.hpc-bridge/endpoints.json` on this computer (the key `<ssh_host>::hpc-bridge-<facility>`), or from `uv run globus-compute-endpoint list` on the system (with the step 3 prefix). The UUID is stable across restarts.
 
-1. Make sure the system is logged in to Globus: `uv run globus-compute-endpoint whoami`. hpc-bridge copies the Globus login from this computer when it sets up its own endpoint, so this normally succeeds with no action. If it is not logged in, **(user)** the user runs the login over the SSH connection from step 2, so there is no second MFA prompt:
-   ```bash
-   ssh -o ControlPath=$HOME/.hpc-bridge/cm/%C aurora.alcf.anl.gov 'cd ~/genesis_mission_hackathon && uv run globus-compute-endpoint login'
-   ```
-2. Configure once: `[ -d ~/.globus_compute/gm_endpoint ] || uv run globus-compute-endpoint configure gm_endpoint`. The default template runs tasks on the login node, which is what this repo wants.
-3. Start it detached: `uv run globus-compute-endpoint start --detach gm_endpoint`. Do not use `setsid`, `nohup`, or `&`; `--detach` is the supported way and the process survives the session. Without `--detach`, `start` runs in the foreground and never returns.
-4. Check: `uv run globus-compute-endpoint list` must show `gm_endpoint` as `Running` with a UUID. If it shows `Initialized` and the start returned 73, the variables in step 3 were not unset.
+Its UEP template branches on the **boolean** `compute`. With no `user_endpoint_config` it defaults to `compute: true` and an empty account, so a bare submit fails with `qsub: Account_Name is required`. Every task must send one of the configs in section 5.
 
-The UUID is stable: a later `start` of the same `gm_endpoint` registers the same UUID, so `settings.env` stays valid.
+**Make the compute workers use the repo `.venv`.** hpc-bridge's template sets the default `worker_init` to its own `~/.hpc-bridge/gce-venv`, which has only `globus-compute-endpoint` and none of the repo packages. Change the default to the repo `.venv`. Do this after every new provision, because hpc-bridge writes its own template again when it makes the endpoint:
+
+```bash
+cd ~/.globus_compute/hpc-bridge-<facility> && cp user_config_template.yaml.j2 user_config_template.yaml.j2.orig && python3 - <<'EOF'
+import re
+p = "user_config_template.yaml.j2"
+s = open(p).read()
+new = '    worker_init: {{ worker_init | default("source $HOME/genesis_mission_hackathon/.venv/bin/activate") }}'
+s, n = re.subn(r"^    worker_init: \{\{ worker_init \| default\(.*\) \}\}$", new, s, flags=re.M)
+assert n == 1, n
+open(p, "w").write(s)
+EOF
+grep -n 'worker_init' user_config_template.yaml.j2
+```
+
+The `grep` must show the `genesis_mission_hackathon/.venv` default. You do not need to restart the endpoint: the manager renders the template again for each new UEP. A `worker_init` that the task sends still replaces the default; Aurora tasks that need the internet send the proxy and the venv together (section 5).
 
 ## 5. Update `settings.env` and test (local)
 
-Change only the line for the system, and do not print the file:
+Set both endpoint variables for the system to the hpc-bridge UUID. Comment out an older value instead of deleting it. Do not print the file:
 
 ```bash
-sed -i.bak 's/^AURORA_ENDPOINT_ID=.*/AURORA_ENDPOINT_ID=<uuid>/' settings.env && rm settings.env.bak
+sed -i.bak -e 's/^AURORA_ENDPOINT_ID=\(.*\)/# AURORA_ENDPOINT_ID=\1\nAURORA_ENDPOINT_ID=<uuid>/' \
+  -e 's/^AURORA_COMPUTE_ENDPOINT_ID=.*/AURORA_COMPUTE_ENDPOINT_ID=<uuid>/' settings.env && rm settings.env.bak
 ```
 
-Then run the test from the repository root: `uv run python intermediate/00_endpoint_setup/remote_function_call.py`. It must print `Hello World from <login node>` for the system. The script tries every endpoint in `settings.env` in order and stops at the first one that is not online, so leave the other variables empty.
+Check that `<SYSTEM>_ACCOUNT` is set without printing it (`os.environ.get(...)` is truthy).
 
-Report to the user: the system and login node, the endpoint UUID and status, that `settings.env` was updated, that nothing was charged to an allocation, and the restart command for after a login-node reboot:
+**Compute-node config (the default).** `intermediate/00_endpoint_setup/remote_compute_node_call.py` has the tested values; reuse them:
 
-```bash
-cd ~/genesis_mission_hackathon && uv run globus-compute-endpoint start --detach gm_endpoint
+| Key | Aurora | Perlmutter |
+|---|---|---|
+| `compute` | `True` (a bool) | `True` |
+| `account` | `AURORA_ACCOUNT` | `PERLMUTTER_ACCOUNT` |
+| `partition` | `"debug"` (the PBS queue) | `"debug"` |
+| `walltime` | `"00:10:00"` | `"00:10:00"` |
+| `scheduler_options` | `"#PBS -l filesystems=home:flare"` (required, or the job is held) | `"#SBATCH --constraint=cpu"` |
+| `worker_init` | `export http_proxy=http://proxy.alcf.anl.gov:3128 https_proxy=http://proxy.alcf.anl.gov:3128; source $HOME/genesis_mission_hackathon/.venv/bin/activate` | `source $HOME/genesis_mission_hackathon/.venv/bin/activate` |
+
+Aurora compute nodes reach the internet (Globus, the Academy exchange, the MAG) only through the ALCF proxy. Do not quote strings yourself; the endpoint quotes them.
+
+After the user's OK, run from the repository root: `uv run python intermediate/00_endpoint_setup/remote_compute_node_call.py`. Run it in the background: the job waits in the queue first (Aurora took about 10 min). It must print `Hello World from x4…` (Aurora) or `nid…` (Perlmutter). While it waits, watch the job with `run_shell("qstat -u $USER", shape="login")` or `squeue -u $USER`.
+
+**Login-node config (only for quick checks, no allocation).** Send all three keys; `compute: False` alone still renders a PBS/Slurm provider and fails:
+
+```python
+{"compute": False, "provider_type": "LocalProvider", "max_workers_per_node": 1}
 ```
+
+In a `ShellFunction`, `{name}` is a format field. Write a shell `${var%x}` as `${{var%x}}`, or the task fails with `KeyError`.
+
+Report to the user: the system, the endpoint name and UUID, the compute-node host name from the test, that `settings.env` was updated, and that the test used one short `debug` job on their account.
+
+If the test fails, read the UEP log and the submit script on the system: `~/.globus_compute/uep.<endpoint-uuid>.*/endpoint.log` and `submit_scripts/`. A transient `ssl.SSLError: unknown error` at UEP start is harmless; the endpoint retries and connects.
 
 ## 6. Stop
 
-To stop the hackathon endpoint: `uv run globus-compute-endpoint stop gm_endpoint` (with the step 3 prefix). Leave hpc-bridge's own login-node endpoint running; it costs nothing and makes the next connection zero-SSH. Only `teardown_endpoint` if the user asks for that explicitly.
+Leave `hpc-bridge-<facility>` running; it costs nothing while idle (`min_blocks` is 0, so idle compute jobs end). Only `teardown_endpoint` if the user asks for that explicitly. A queued or running compute job is cancelled with `qdel <id>` / `scancel <id>` through `run_shell(shape="login")`.
+
+## 7. Fallback: `gm_endpoint` on the login node
+
+Use this only if the user asks for the login node or has no allocation. Use the step 3 prefix on every command.
+
+1. Make sure the system is logged in to Globus: `uv run globus-compute-endpoint whoami`. If it is not, **(user)** the user runs the login over the SSH connection from step 2:
+   ```bash
+   ssh -o ControlPath=$HOME/.hpc-bridge/cm/%C aurora.alcf.anl.gov 'cd ~/genesis_mission_hackathon && uv run globus-compute-endpoint login'
+   ```
+2. Configure once: `[ -d ~/.globus_compute/gm_endpoint ] || uv run globus-compute-endpoint configure gm_endpoint`. The default template runs tasks on the login node.
+3. Start it detached: `uv run globus-compute-endpoint start --detach gm_endpoint`. Do not use `setsid`, `nohup`, or `&`. Without `--detach`, `start` never returns. If it returns 73, the variables in step 3 were not unset.
+4. Check: `uv run globus-compute-endpoint list` must show `gm_endpoint` as `Running`. Put its UUID in `<SYSTEM>_ENDPOINT_ID` and test with `remote_function_call.py`.
+5. To stop it: `uv run globus-compute-endpoint stop gm_endpoint`.
