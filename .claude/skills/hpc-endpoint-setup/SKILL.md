@@ -92,12 +92,15 @@ s = open(p).read()
 new = '    worker_init: {{ worker_init | default("source $HOME/genesis_mission_hackathon/.venv/bin/activate") }}'
 s, n = re.subn(r"^    worker_init: \{\{ worker_init \| default\(.*\) \}\}$", new, s, flags=re.M)
 assert n == 1, n
+new = "  max_workers_per_node: {{ max_workers_per_node | default(12) }}"
+s, n = re.subn(r"^  max_workers_per_node: \{\{ max_workers_per_node \| default\(.*\) \}\}$", new, s, flags=re.M)
+assert n == 1, n
 open(p, "w").write(s)
 EOF
-grep -n 'worker_init' user_config_template.yaml.j2
+grep -n -E 'worker_init|max_workers_per_node' user_config_template.yaml.j2
 ```
 
-The `grep` must show the `genesis_mission_hackathon/.venv` default. You do not need to restart the endpoint: the manager renders the template again for each new UEP. A `worker_init` that the task sends still replaces the default; Aurora tasks that need the internet send the proxy and the venv together (section 5).
+The `grep` must show the `genesis_mission_hackathon/.venv` default and `default(12)`. The login-node config (section 5) still sends `max_workers_per_node: 1`, which replaces the default. You do not need to restart the endpoint: the manager renders the template again for each new UEP. A `worker_init` that the task sends still replaces the default; Aurora tasks that need the internet send the proxy and the venv together (section 5).
 
 ## 5. Update `settings.env` and test (local)
 
@@ -118,6 +121,7 @@ Check that `<SYSTEM>_ACCOUNT` is set without printing it (`os.environ.get(...)` 
 | `account` | `AURORA_ACCOUNT` | `PERLMUTTER_ACCOUNT` |
 | `partition` | `"debug"` (the PBS queue) | `"debug"` |
 | `walltime` | `"00:10:00"` | `"00:10:00"` |
+| `max_workers_per_node` | omit (template default 12) | omit (template default 12) |
 | `scheduler_options` | `"#PBS -l filesystems=home:flare"` (required, or the job is held) | `"#SBATCH --constraint=cpu"` |
 | `worker_init` | `export http_proxy=http://proxy.alcf.anl.gov:3128 https_proxy=http://proxy.alcf.anl.gov:3128; source $HOME/genesis_mission_hackathon/.venv/bin/activate` | `source $HOME/genesis_mission_hackathon/.venv/bin/activate` |
 

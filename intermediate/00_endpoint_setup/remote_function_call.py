@@ -49,6 +49,8 @@ if __name__ == "__main__":
             os.environ.get("AURORA_ENDPOINT_ID"),
             {
                 "account": os.environ.get("AURORA_ACCOUNT"),
+                # hpc-bridge reads the PBS queue from "partition"
+                "partition": os.environ.get("AURORA_QUEUE"),
                 # Aurora holds jobs that do not name the file systems they use
                 "scheduler_options": "#PBS -l filesystems=home:flare",
             },
