@@ -2,7 +2,7 @@
 
 NOTE:: If you are using MAG, this example will work only within DOE lab networks
 
-Same as discovery_campaign.py, but the agents run in this process and talk
+Same as remote_discovery_campaign.py, but the agents run in this process and talk
 over a local exchange, so no Globus Compute endpoint or Academy cloud
 exchange is needed. Only the MAG settings in settings.env are required.
 """
