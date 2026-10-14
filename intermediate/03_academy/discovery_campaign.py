@@ -1,3 +1,6 @@
+# In this example we will launch MolDesignAgents on a remote endpoint
+#
+
 from __future__ import annotations
 
 import asyncio
@@ -6,10 +9,11 @@ import os
 
 import dotenv
 from academy.exchange import HttpExchangeFactory
+from academy.identifier import AgentId
 from academy.manager import Manager
 from globus_compute_sdk import Executor as GlobusExecutor
 
-from intermediate.custom_agents.mol_design_agents import MolDesignAgent
+from intermediate.custom_agents.monitored_md_agent import MonitoredMolDesignAgent
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +22,19 @@ async def main() -> int:
 
     # 1. Update this to match your preferred HPC system
     dotenv.load_dotenv(dotenv.find_dotenv("settings.env", usecwd=True))
+
+    # 2. Go to dashboard.academy-agents.org to start a UserAgent and add
+    #    to settings.env
+    user_agent_id = os.environ["USER_AGENT_ID"]
+
     executor = GlobusExecutor(
         endpoint_id=os.environ["AURORA_ENDPOINT_ID"],
-        # Run the workers in the repo venv from `uv sync`, which has the agent code
+        # The batch job to request. The endpoint template must use these variables.
+        # TODO: Update the following to match your preferred endpoint
         user_endpoint_config={
-            "worker_init": "source $HOME/genesis_mission_hackathon/.venv/bin/activate"
+            "account": os.environ["AURORA_ACCOUNT"],
+            "queue": "debug",
+            "walltime": "00:10:00",
         },
     )
 
@@ -30,22 +42,27 @@ async def main() -> int:
         factory=HttpExchangeFactory(),
         executors=executor,
     ) as manager:
+        # 3. Get a handle to the UserAgent
+        agent_id = AgentId(uid=user_agent_id, name="UserAgent")
+        user_agent_handle = manager.get_handle(agent_id)
+
         seeds = [
-            "CNC(N)=O",
-            "CC1=C(O)N=C(O)N1",
+            "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin
+            "CC1=C(O)N=C(O)N1",  # 5-Methylhydantoin (enol form)
         ]
 
-        # We spawn agents that will process each molecule independently
+        # 4. We spawn agents that will process each molecule independently
         agents = []
         for molecule in seeds:
             agents.append(
                 await manager.launch(
-                    MolDesignAgent,
+                    MonitoredMolDesignAgent,
                     args=(molecule,),
                     kwargs={
                         "llm_model": os.environ["LLM_MODEL"],
                         "base_url": os.environ["OPENAI_BASE_URL"],
                         "api_key": os.environ["AMSC_TOKEN"],
+                        "user_agent_handle": user_agent_handle,
                     },
                 ),
             )

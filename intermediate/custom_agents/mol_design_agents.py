@@ -237,10 +237,10 @@ class MolDesignAgent(Agent):
 
         async def simulate(state: SearchState) -> SearchState:
             """Performs the tool call"""
-            logger.warning(
+            logger.info(
                 f"Previous Simulations: {len(state.simulated_molecules)}",
             )
-            logger.warning(f"New Simulations: {len(state.tool_calls)}")
+            logger.info(f"New Simulations: {len(state.tool_calls)}")
             if len(state.tool_calls) == 0:
                 return state
 
