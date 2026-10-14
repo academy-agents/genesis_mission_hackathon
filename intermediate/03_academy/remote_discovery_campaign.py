@@ -34,7 +34,7 @@ async def main() -> int:
         user_endpoint_config={
             "account": os.environ["AURORA_ACCOUNT"],
             "queue": "debug",
-            "walltime": "00:10:00",
+            "scheduler_options": "#PBS -l filesystems=home:flare",
         },
     )
 
