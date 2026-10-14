@@ -22,6 +22,15 @@ When you start Claude Code in this repository and trust the folder, it offers to
 /reload-plugins
 ```
 
+Before you do, make sure `~/.ssh/config` names your user on the system. hpc-bridge reads
+the remote user name only from there; without an entry it connects as your local user name
+and fails:
+
+```
+Host aurora.alcf.anl.gov
+  User <your-username-on-the-system>
+```
+
 Then give the agent one prompt, for example:
 
 ```
@@ -79,14 +88,25 @@ The script runs `hello_world` on each endpoint in `settings.env` and shows the r
 
 The endpoint that hpc-bridge makes (`hpc-bridge-<site>`) can run a task on the login node or on a compute node. If the task sends `"compute": True` in `user_endpoint_config`, the endpoint submits a batch job: a PBS job on Aurora, or a Slurm job on Perlmutter.
 
-1. In `settings.env`, set `AURORA_COMPUTE_ENDPOINT_ID` and `PERLMUTTER_COMPUTE_ENDPOINT_ID` to the hpc-bridge endpoint IDs. Set `AURORA_ACCOUNT` and `PERLMUTTER_ACCOUNT` to your allocations.
+1. In `settings.env`, set `AURORA_ENDPOINT_ID` and `PERLMUTTER_ENDPOINT_ID` to the hpc-bridge endpoint IDs. Set `AURORA_ACCOUNT` and `PERLMUTTER_ACCOUNT` to your allocations, and `AURORA_QUEUE` to the PBS queue to submit to.
 2. Run the test:
 
    ```bash
-   uv run python intermediate/00_endpoint_setup/remote_compute_node_call.py
+   uv run python intermediate/00_endpoint_setup/remote_function_call.py
    ```
 
-The script submits one 10 minute `debug` job on each system. It waits for the job to start, then shows the host name of the compute node. The job uses your allocation.
+The script submits one batch job on each configured system. It waits for the job to start, then shows the host name of the compute node. The job uses your allocation.
+
+On Aurora the job goes to the queue named by `AURORA_QUEUE`. The template ships the
+hackathon reservation `R8914313`, which requires membership in the
+`GenesisHackathonOct26` project; set `AURORA_QUEUE=debug` and `AURORA_ACCOUNT` to your
+own allocation if you are not a member. The script sends no walltime, so the endpoint
+template default applies (30 minutes). The block is released once it goes idle.
+
+If `qsub` reports `Request rejected. Reason: user <you> is not member of project <name>`,
+your allocation or project membership has not been provisioned on the system — check
+`getent group <project>` on a login node. This is an account issue, not an endpoint
+problem.
 
 # HPC-Bridge
 

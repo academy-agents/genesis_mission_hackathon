@@ -35,7 +35,9 @@ Presented: Kyle Chard
    uv sync
    ```
 
-3. Copy the settings template. Then add your endpoint IDs, `USER_AGENT_ID`, and your MAG values:
+3. Copy the settings template. Then add your endpoint IDs, your `USER_AGENT_ID` from
+   [dashboard.academy-agents.org](https://dashboard.academy-agents.org), and your MAG
+   key from [MAG get started](https://amsc-docs-d762d2.gitlab.io/mag-get-started):
 
    ```bash
    cp settings.env.example settings.env

@@ -11,10 +11,16 @@ Here we do the following:
 Add these values to `settings.env` in the repository root:
 
 ```
-LLM_MODEL=gpt-6-luna
+LLM_MODEL=grok-4-1-fast-reasoning
 OPENAI_BASE_URL=https://mag.genesis.americansciencecloud.org/v1
 AMSC_TOKEN=<your MAG key>
 ```
+
+To obtain a MAG key, follow [MAG get started](https://amsc-docs-d762d2.gitlab.io/mag-get-started).
+
+`LLM_MODEL` must name a model with tool-calling support. `gpt-6-luna` answers plain
+chat requests but returns a `401` on tool calls, so the graph below fails at the
+`run_on_aurora` step.
 
 ## Prompt
 

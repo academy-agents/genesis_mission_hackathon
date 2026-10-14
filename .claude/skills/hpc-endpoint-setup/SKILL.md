@@ -9,7 +9,7 @@ The goal is the state that Module 1 to 4 need:
 
 - `~/genesis_mission_hackathon` on the system, installed with `uv sync`.
 - The endpoint that hpc-bridge makes, `hpc-bridge-<facility>`, online. **By default, tasks run on compute nodes**: the endpoint submits a PBS job (Aurora) or a Slurm job (Perlmutter) for them, and the workers run in the repo `.venv`.
-- Its UUID in `settings.env` on this computer, and `remote_compute_node_call.py` returning `Hello World from <compute node>`.
+- Its UUID in `settings.env` on this computer, and `remote_function_call.py` returning `Hello World from <compute node>`.
 
 A login-node endpoint (`gm_endpoint`) is the fallback. Use it only if the user asks for the login node, or has no allocation (section 7).
 
@@ -102,6 +102,12 @@ grep -n -E 'worker_init|max_workers_per_node' user_config_template.yaml.j2
 
 The `grep` must show the `genesis_mission_hackathon/.venv` default and `default(12)`. The login-node config (section 5) still sends `max_workers_per_node: 1`, which replaces the default. You do not need to restart the endpoint: the manager renders the template again for each new UEP. A `worker_init` that the task sends still replaces the default; Aurora tasks that need the internet send the proxy and the venv together (section 5).
 
+**On Aurora the default must carry the proxy as well as the venv.** `remote_function_call.py` sends no `worker_init`, so the default is what compute nodes run, and an Aurora worker that cannot reach the ALCF proxy never registers with Globus — the task then times out with no useful error. Use this default instead of the venv alone:
+
+```
+    worker_init: {{ worker_init | default("'export http_proxy=http://proxy.alcf.anl.gov:3128 https_proxy=http://proxy.alcf.anl.gov:3128; source $HOME/genesis_mission_hackathon/.venv/bin/activate'") }}
+```
+
 ## 5. Update `settings.env` and test (local)
 
 Set both endpoint variables for the system to the hpc-bridge UUID. Comment out an older value instead of deleting it. Do not print the file:
@@ -113,7 +119,7 @@ sed -i.bak -e 's/^AURORA_ENDPOINT_ID=\(.*\)/# AURORA_ENDPOINT_ID=\1\nAURORA_ENDP
 
 Check that `<SYSTEM>_ACCOUNT` is set without printing it (`os.environ.get(...)` is truthy).
 
-**Compute-node config (the default).** `intermediate/00_endpoint_setup/remote_compute_node_call.py` has the tested values; reuse them:
+**Compute-node config (the default).** `intermediate/00_endpoint_setup/remote_function_call.py` has the tested values; reuse them:
 
 | Key | Aurora | Perlmutter |
 |---|---|---|
@@ -127,7 +133,7 @@ Check that `<SYSTEM>_ACCOUNT` is set without printing it (`os.environ.get(...)` 
 
 Aurora compute nodes reach the internet (Globus, the Academy exchange, the MAG) only through the ALCF proxy. Do not quote strings yourself; the endpoint quotes them.
 
-After the user's OK, run from the repository root: `uv run python intermediate/00_endpoint_setup/remote_compute_node_call.py`. Run it in the background: the job waits in the queue first (Aurora took about 10 min). It must print `Hello World from x4…` (Aurora) or `nid…` (Perlmutter). While it waits, watch the job with `run_shell("qstat -u $USER", shape="login")` or `squeue -u $USER`.
+After the user's OK, run from the repository root: `uv run python intermediate/00_endpoint_setup/remote_function_call.py`. Run it in the background: the job waits in the queue first (Aurora took about 10 min). It must print `Hello World from x4…` (Aurora) or `nid…` (Perlmutter). While it waits, watch the job with `run_shell("qstat -u $USER", shape="login")` or `squeue -u $USER`.
 
 **Login-node config (only for quick checks, no allocation).** Send all three keys; `compute: False` alone still renders a PBS/Slurm provider and fails:
 
