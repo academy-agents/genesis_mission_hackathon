@@ -34,7 +34,7 @@ async def main() -> int:
         user_endpoint_config={
             "account": os.environ.get("PERLMUTTER_ACCOUNT"),
             "partition": "debug",
-            "scheduler_options": f"#SBATCH --constraint=cpu\n#SBATCH --reservation={os.environ.get('PERLMUTTER_RESERVATION')}",
+            "scheduler_options": f"#SBATCH --constraint=gpu\n#SBATCH --reservation={os.environ.get('PERLMUTTER_RESERVATION')}",
         },
     )
 
