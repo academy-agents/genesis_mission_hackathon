@@ -25,7 +25,7 @@ When you start Claude Code in this repository and trust the folder, it offers to
 Then give the agent one prompt, for example:
 
 ```
-Connect to aurora.alcf.anl.gov, install genesis_mission_hackathon, and start a globus_compute_endpoint.
+Connect to aurora.alcf.anl.gov, install genesis_mission_hackathon, and start a globus_compute_endpoint configured to provision compute nodes
 ```
 
 The agent connects to the system, installs this repo, starts the endpoint, and adds the endpoint UUID to `settings.env`.
@@ -74,6 +74,19 @@ uv run python intermediate/00_endpoint_setup/remote_function_call.py
 ```
 
 The script runs `hello_world` on each endpoint in `settings.env` and shows the result.
+
+# Run tasks on compute nodes
+
+The endpoint that hpc-bridge makes (`hpc-bridge-<site>`) can run a task on the login node or on a compute node. If the task sends `"compute": True` in `user_endpoint_config`, the endpoint submits a batch job: a PBS job on Aurora, or a Slurm job on Perlmutter.
+
+1. In `settings.env`, set `AURORA_COMPUTE_ENDPOINT_ID` and `PERLMUTTER_COMPUTE_ENDPOINT_ID` to the hpc-bridge endpoint IDs. Set `AURORA_ACCOUNT` and `PERLMUTTER_ACCOUNT` to your allocations.
+2. Run the test:
+
+   ```bash
+   uv run python intermediate/00_endpoint_setup/remote_compute_node_call.py
+   ```
+
+The script submits one 10 minute `debug` job on each system. It waits for the job to start, then shows the host name of the compute node. The job uses your allocation.
 
 # HPC-Bridge
 
