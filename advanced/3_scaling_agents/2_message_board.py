@@ -100,6 +100,8 @@ class WordleAgent(MonitoredAgent):
 
     async def agent_on_startup(self):
         """Initialize the academy agent state."""
+        # Start sending logs and stats to the UserAgent
+        await super().agent_on_startup()
         self.peers = [p for p in self.peers if p.agent_id != self.agent_id]
 
     @action

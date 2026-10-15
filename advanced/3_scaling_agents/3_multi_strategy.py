@@ -162,6 +162,8 @@ class CoordinatorAgent(MonitoredAgent):
 
     async def agent_on_startup(self):
         """Initialize the academy agent state."""
+        # Start sending logs and stats to the UserAgent
+        await super().agent_on_startup()
 
         @tool(
             "evaluate_strategies",
