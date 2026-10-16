@@ -23,7 +23,9 @@ An agent is only as useful as its tools. In this example, Claude Code uses RDKit
 
 Prompt:
 
-`On Aurora, use RDKit to calculate the QED drug-likeness of aspirin, CC(=O)Oc1ccccc1C(=O)O.`
+```
+On Aurora, use RDKit to calculate the QED drug-likeness of aspirin, CC(=O)Oc1ccccc1C(=O)O.
+```
 
 The agent:
 

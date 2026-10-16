@@ -34,7 +34,7 @@ async def main() -> int:
         user_endpoint_config={
             "account": os.environ.get("PERLMUTTER_ACCOUNT"),
             "partition": "debug",
-            "scheduler_options": f"#SBATCH --constraint=cpu\n#SBATCH --reservation={os.environ.get('PERLMUTTER_RESERVATION')}",
+            "scheduler_options": f"#SBATCH --constraint=gpu\n#SBATCH --reservation={os.environ.get('PERLMUTTER_RESERVATION')}",
         },
     )
 
@@ -69,7 +69,8 @@ async def main() -> int:
 
         print("Starting discovery campaign")
         print("=" * 80)
-        while True:
+        # Limit to 10 rounds
+        for i in range(10):
             await asyncio.sleep(30)
             for i, agent in enumerate(agents):
                 print(f"Progress report from agent {i}")

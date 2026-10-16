@@ -60,7 +60,7 @@ if __name__ == "__main__":
             {
                 "account": os.environ.get("PERLMUTTER_ACCOUNT"),
                 # Perlmutter rejects jobs that do not select CPU or GPU nodes
-                "scheduler_options": f"#SBATCH --constraint=cpu\n#SBATCH --reservation={os.environ.get('PERLMUTTER_RESERVATION')}",
+                "scheduler_options": f"#SBATCH --constraint=gpu\n#SBATCH --reservation={os.environ.get('PERLMUTTER_RESERVATION')}",
             },
         ),
         # Frontier remains untested

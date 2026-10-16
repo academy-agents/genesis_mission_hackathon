@@ -129,7 +129,7 @@ Check that `AURORA_ACCOUNT` and `AURORA_QUEUE`, or `PERLMUTTER_ACCOUNT` and `PER
 | `partition` | `"debug"` (the PBS queue) | `"debug"` |
 | `walltime` | `"00:10:00"` | `"00:10:00"` |
 | `max_workers_per_node` | omit (template default 12) | omit (template default 12) |
-| `scheduler_options` | `"#PBS -l filesystems=home:flare"` (required, or the job is held) | `"#SBATCH --constraint=cpu\n#SBATCH --reservation=<PERLMUTTER_RESERVATION>"`: put the value of `PERLMUTTER_RESERVATION` into the string in Python, because Slurm does not expand `$VAR` in `#SBATCH` lines |
+| `scheduler_options` | `"#PBS -l filesystems=home:flare"` (required, or the job is held) | `"#SBATCH --constraint=gpu\n#SBATCH --reservation=<PERLMUTTER_RESERVATION>"`: put the value of `PERLMUTTER_RESERVATION` into the string in Python, because Slurm does not expand `$VAR` in `#SBATCH` lines |
 | `worker_init` | `export http_proxy=http://proxy.alcf.anl.gov:3128 https_proxy=http://proxy.alcf.anl.gov:3128; source $HOME/genesis_mission_hackathon/.venv/bin/activate` | `source $HOME/genesis_mission_hackathon/.venv/bin/activate` |
 
 Aurora compute nodes reach the internet (Globus, the Academy exchange, the MAG) only through the ALCF proxy. Do not quote strings yourself; the endpoint quotes them.

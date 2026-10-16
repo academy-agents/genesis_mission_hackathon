@@ -29,7 +29,7 @@ async def main(user_agent_id: UUID) -> None:
                 "account": os.environ["PERLMUTTER_ACCOUNT"],
                 "partition": "debug",
                 # Perlmutter rejects jobs that do not select CPU or GPU nodes
-                "scheduler_options": f"#SBATCH --constraint=cpu\n#SBATCH --reservation={os.environ['PERLMUTTER_RESERVATION']}",
+                "scheduler_options": f"#SBATCH --constraint=gpu\n#SBATCH --reservation={os.environ['PERLMUTTER_RESERVATION']}",
             },
         ),
         #'anvil': GlobusExecutor(
